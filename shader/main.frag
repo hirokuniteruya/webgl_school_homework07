@@ -11,6 +11,8 @@ uniform bool      isToonShading;
 varying vec3 vNormal;
 varying vec2 vTexCoord;
 
+const float ambientLight = .1;
+
 void main() {
     // ベクトルの単位化
     vec3 light = normalize(lightDirection);
@@ -37,6 +39,9 @@ void main() {
         }
 
         rgb *= samplerColor.rgb;
+
+        // 気持ち分、明るく。
+        rgb += ambientLight;
     }
 
     gl_FragColor = vec4(rgb, 1.0);
