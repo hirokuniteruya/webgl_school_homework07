@@ -1,4 +1,13 @@
-export { WebGLUtility, WebGLOrbitCamera, WebGLMath, Mat4, Vec3, Vec2, Qtn, WebGLGeometry };
+export {
+    WebGLUtility,
+    WebGLOrbitCamera,
+    WebGLMath,
+    Mat4,
+    Vec3,
+    Vec2,
+    Qtn,
+    WebGLGeometry
+}
 
 /**
  * WebGL の API を目的別にまとめたユーティリティクラス
@@ -211,6 +220,57 @@ class WebGLUtility {
         // 安全の為にテクスチャのバインドを解除してから返す
         gl.bindTexture(gl.TEXTURE_2D, null);
         return texture;
+    }
+    /**
+     * キューブマップテクスチャを非同期に生成する Promise を返す
+     * @param {Array.<string>} source - 読み込む画像のパスの配列
+     * @param {Array.<number>} target - 画像にそれぞれ対応させるターゲット定数の配列
+     * @return {Promise} テクスチャを引数に渡して解決する Promise
+     */
+    createCubeTextureFromFile(source, target){
+        return new Promise((resolve) => {
+            const gl = this.gl;
+            // テクスチャオブジェクトを生成
+            const texture = gl.createTexture();
+            // アクティブなテクスチャユニット番号を指定する
+            gl.activeTexture(gl.TEXTURE0);
+            // テクスチャをアクティブなユニットにキューブテクスチャとしてバインドする
+            gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+
+            // 画像を個々に読み込む Promise を生成し配列に入れておく
+            const promises = source.map((src, index) => {
+                // 画像の読み込みが完了し、テクスチャに画像を割り当てたら解決する Promise
+                return new Promise((loadedResolve) => {
+                    // 空の画像オブジェクト
+                    const img = new Image();
+                    // ロード完了時の処理を先に登録
+                    img.addEventListener('load', () => {
+                        // 読み込んだ画像をテクスチャに割り当てる
+                        gl.texImage2D(target[index], 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+                        // Promise を解決する
+                        loadedResolve();
+                    }, false);
+                    // 画像のソースを設定
+                    img.src = src;
+                });
+            });
+
+            // すべての Promise を一気に実行する
+            Promise.all(promises)
+            .then(() => {
+                // ミップマップを自動生成する
+                gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+                // テクスチャパラメータを設定する
+                gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                // 安全の為にテクスチャのバインドを解除してから Promise を解決する
+                gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
+                // Promise を解決する際、生成したテクスチャを引数から返す
+                resolve(texture);
+            });
+        });
     }
 }
 

@@ -1,48 +1,20 @@
 precision mediump float;
 
-uniform vec3      lightDirection;
-uniform sampler2D textureUnit;
-uniform vec3      globalColor;
-uniform float     gradient;
-uniform bool      isTexture;
-uniform bool      isEdge;
-uniform bool      isToonShading;
-
-varying vec3 vNormal;
-varying vec2 vTexCoord;
-
-const float ambientLight = .1;
+uniform vec4  globalColor;
+uniform float power;
 
 void main() {
-    // ベクトルの単位化
-    vec3 light = normalize(lightDirection);
-    vec3 normal = normalize(vNormal);
+    // 1. gl_PointCoord.st の座標系を、中心を原点とした座標系に変換する
+    vec2 p = gl_PointCoord.st * 2.0 - 1.0;
+    // 2. 原点からの距離を求める
+    float len = length(p);
+    // 3. 光ったような効果を得たいので、ベクトルの長さを除数として使う
+    float dest = power / len;
+    // 4-1. 外縁は完全に透明（黒）になってほしいので頂点から遠いほど暗くする
+    dest *= max(1.0 - len, 0.0);
+    // 4-2. または、べき乗を活用する
+    // dest = pow(dest, 5.0);
 
-    // 最終出力される色
-    vec3 rgb = vec3(0.0);
+    gl_FragColor = vec4(vec3(dest), 1.0) * globalColor;
 
-    if (isEdge != true) {
-        // 輝度
-        float luminance = dot(light, normal) * 0.5 + 0.5;
-        if (isToonShading == true) {
-            // 解像度を落とす
-            luminance = floor(luminance * gradient) / gradient;
-        }
-
-        // グローバルカラーと拡散光を乗算
-        rgb = vec3(luminance);
-
-        // フラグの状態に応じてテクスチャのサンプリング（色の参照と抽出）を行う
-        vec4 samplerColor = vec4(1.0);
-        if (isTexture == true) {
-            samplerColor = texture2D(textureUnit, vTexCoord);
-        }
-
-        rgb *= samplerColor.rgb;
-
-        // 気持ち分、明るく。
-        rgb += ambientLight;
-    }
-
-    gl_FragColor = vec4(rgb, 1.0);
 }
