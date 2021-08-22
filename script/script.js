@@ -15,7 +15,7 @@ import { WebGLUtility, WebGLOrbitCamera, WebGLMath, Mat4, Vec3, Vec2, Qtn, WebGL
     const PARAMS = {
         globalColor : [0.2, 0.6, 0.9],
         globalAlpha : 0.5,
-        pointSize   : 16.0,
+        pointSize   : 64.0,
         pointPower  : 0.1,
     }
 
@@ -25,6 +25,7 @@ import { WebGLUtility, WebGLOrbitCamera, WebGLMath, Mat4, Vec3, Vec2, Qtn, WebGL
     // ジオメトリ情報, VBO, IBO
     let points      = null;   // 頂点データ（座標）を格納する配列
     let randomValue = null;   // 頂点データ（乱数）
+    let aIndex      = null;   // 何番目の頂点データかを格納する配列
     let pointVBO    = null;
 
     // ロケーションとストライド
@@ -46,17 +47,17 @@ import { WebGLUtility, WebGLOrbitCamera, WebGLMath, Mat4, Vec3, Vec2, Qtn, WebGL
         const pane = new Tweakpane.Pane({
             container: document.querySelector('#float-layer'),
         });
-        const f_toon = pane.addFolder({
+        const folder_ps = pane.addFolder({
             title: 'ポイントスプライト',
             expanded: true,
         })
-        f_toon.addInput(PARAMS, 'globalAlpha', { min: 0, max: 1,  step: 0.001 });
-        f_toon.addInput(PARAMS, 'pointSize',   { min: 0, max: 16, step: 0.01 });
-        f_toon.addInput(PARAMS, 'pointPower',  { min: 0, max: 1,  step: 0.001 });
+        folder_ps.addInput(PARAMS, 'globalAlpha', { min: 0, max: 1,  step: 0.001 });
+        folder_ps.addInput(PARAMS, 'pointSize',   { min: 0, max: 128, step: 0.01 });
+        folder_ps.addInput(PARAMS, 'pointPower',  { min: 0, max: 1,  step: 0.001 });
         const r = PARAMS.globalColor[0] * 255;
         const g = PARAMS.globalColor[1] * 255;
         const b = PARAMS.globalColor[2] * 255;
-        pane.addInput({ color: { r, g, b }}, 'color', { picker: 'inline', expanded: true })
+        folder_ps.addInput({ color: { r, g, b }}, 'color', { picker: 'inline', expanded: true })
             .on('change', ev => {
                 PARAMS.globalColor = [
                     ev.value.r / 255,
@@ -123,8 +124,9 @@ import { WebGLUtility, WebGLOrbitCamera, WebGLMath, Mat4, Vec3, Vec2, Qtn, WebGL
     function setupGeometry() {
 
         // 頂点の情報を定義する
-        points = [];
+        points      = [];
         randomValue = [];
+        aIndex      = [];
 
         for (let i = 0; i < POINT_COUNT; ++i) {
             const w = POINT_RANGE / 2;
@@ -139,11 +141,13 @@ import { WebGLUtility, WebGLOrbitCamera, WebGLMath, Mat4, Vec3, Vec2, Qtn, WebGL
                 Math.random(),
                 Math.random(),
             );
+            aIndex.push(i);
         }
 
         pointVBO = [
             webgl.createVBO(points),
             webgl.createVBO(randomValue),
+            // webgl.createVBO(aIndex),
         ];
     }
 
@@ -156,8 +160,9 @@ import { WebGLUtility, WebGLOrbitCamera, WebGLMath, Mat4, Vec3, Vec2, Qtn, WebGL
         attLocation = [
             gl.getAttribLocation(webgl.program, 'position'),
             gl.getAttribLocation(webgl.program, 'randomValue'),
+            gl.getAttribLocation(webgl.program, 'aIndex'),
         ];
-        attStride = [3, 4];
+        attStride = [3, 4, 1];
 
         uniLocation = {
             mvpMatrix      : gl.getUniformLocation(webgl.program, 'mvpMatrix'),

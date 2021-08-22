@@ -1,9 +1,13 @@
-attribute vec3 position;
-attribute vec4 randomValue;
+attribute vec3  position;
+attribute vec4  randomValue;
+// attribute float aIndex;
 
 uniform mat4  mvpMatrix;
 uniform float pointSize;
 uniform float time;
+
+// varying float vIndex;
+varying vec2  vPosition;
 
 void main() {
     // 頂点属性として入ってきた乱数値を頂点の動きなどに活用する
@@ -14,7 +18,14 @@ void main() {
     // とりあえずサイン・コサインで動かしてみる
     vec3 offset = vec3(cos(time * cosScale), sin(time * sinScale), 0.0) * width;
     // オフセット量を頂点座標に加算してから行列にで変換して出力
-    gl_Position = mvpMatrix * vec4(position + offset, 1.0);
+    // gl_Position = mvpMatrix * vec4(position + offset, 1.0);
+
+    gl_Position = mvpMatrix * vec4(position, 1.0);
+    
     // ポイントサイズにも乱数値が影響するように
     gl_PointSize = pointSize * pointScale;
+
+    // vIndex = aIndex;
+    // スクリーン座標系？を varying 変数としてフラグメントシェーダへ渡す
+    vPosition = gl_Position.xy;
 }

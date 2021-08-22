@@ -1,3 +1,3 @@
-WebGL School の第６回の課題
+WebGL School の第７回の課題
 
-確認用ページ: [Github Pages](https://hirokuniteruya.github.io/webgl_school_homework06/)
+確認用ページ: [Github Pages](https://hirokuniteruya.github.io/webgl_school_homework07/)
